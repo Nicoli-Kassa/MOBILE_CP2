@@ -1,6 +1,3 @@
-// src/screens/ForgotPasswordScreen.js
-// Tema: flat design, verde lima #BFDA45, preto, branco
-
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
