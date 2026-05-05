@@ -1,4 +1,4 @@
-# GreenFlow | CP2
+# 🍀 GreenFlow | CP2
 
 ### Nicoli Amy Kassa | RM 559104
 
