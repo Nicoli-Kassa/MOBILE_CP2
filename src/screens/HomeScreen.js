@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -10,36 +10,36 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 import {
   createProduct,
   deleteProduct,
   getProducts,
   updateProduct,
-} from '../firebase/productService';
+} from "../firebase/productService";
 
 // Formatação monetária BR
 function formatPrice(raw) {
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return '';
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
   const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 function parsePriceToSave(formatted) {
-  return formatted.replace(/\D/g, '');
+  return formatted.replace(/\D/g, "");
 }
 function priceDigitsToFormatted(digits) {
-  if (!digits) return '';
+  if (!digits) return "";
   const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-} 
+  return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 export default function HomeScreen({ navigation, route }) {
-  const [name, setName]                         = useState('');
-  const [priceFormatted, setPriceFormatted]     = useState('');
-  const [priceRaw, setPriceRaw]                 = useState('');
-  const [barcode, setBarcode]                   = useState('');
-  const [products, setProducts]                 = useState([]);
+  const [name, setName] = useState("");
+  const [priceFormatted, setPriceFormatted] = useState("");
+  const [priceRaw, setPriceRaw] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [products, setProducts] = useState([]);
   const [editingProductId, setEditingProductId] = useState(null);
   const formSnapshot = useRef(null);
 
@@ -49,7 +49,7 @@ export default function HomeScreen({ navigation, route }) {
       setProducts(list);
     } catch (error) {
       console.error(error);
-      Alert.alert('Erro', 'Não foi possível carregar os produtos.');
+      Alert.alert("Erro", "Não foi possível carregar os produtos.");
     }
   }
 
@@ -59,26 +59,29 @@ export default function HomeScreen({ navigation, route }) {
 
   // Melhoria 3: restaura dados ao voltar do scanner
   useEffect(() => {
-    if (route.params?.scannedBarcode) {
-      if (formSnapshot.current) {
-        const snap = formSnapshot.current;
-        setName(snap.name);
-        setPriceRaw(snap.priceRaw);
-        setPriceFormatted(snap.priceFormatted);
-        setEditingProductId(snap.editingProductId);
-        formSnapshot.current = null;
-      }
-      setBarcode(String(route.params.scannedBarcode));
+    if (!route.params?.scannedBarcode) return;
+
+    // Restaura o snapshot salvo antes de abrir o scanner
+    if (formSnapshot.current) {
+      const snap = formSnapshot.current;
+      setName(snap.name);
+      setPriceRaw(snap.priceRaw);
+      setPriceFormatted(snap.priceFormatted);
+      setEditingProductId(snap.editingProductId);
+      formSnapshot.current = null;
     }
+
+    setBarcode(String(route.params.scannedBarcode));
+
+    navigation.setParams({ scannedBarcode: undefined });
   }, [route.params?.scannedBarcode]);
 
   function clearForm() {
-    setName('');
-    setPriceFormatted('');
-    setPriceRaw('');
-    setBarcode('');
+    setName("");
+    setPriceFormatted("");
+    setPriceRaw("");
+    setBarcode("");
     setEditingProductId(null);
-    formSnapshot.current = null;
   }
 
   function handlePriceChange(text) {
@@ -89,65 +92,103 @@ export default function HomeScreen({ navigation, route }) {
 
   async function handleSaveProduct() {
     if (!name.trim() || !priceRaw) {
-      Alert.alert('Atenção', 'Preencha nome e preço.');
+      Alert.alert("Atenção", "Preencha nome e preço.");
       return;
     }
+
+    console.log("1. Iniciando salvamento...");
+
     const productData = {
       name: name.trim(),
       price: priceRaw,
       priceFormatted,
-      barcode: barcode ? barcode.trim() : '',
+      barcode: barcode ? barcode.trim() : "",
     };
+
+    console.log("2. Dados do produto:", productData);
+
     try {
       if (editingProductId) {
+        console.log("3a. Atualizando produto ID:", editingProductId);
         await updateProduct(editingProductId, productData);
-        Alert.alert('Sucesso', 'Produto atualizado!');
+        console.log("4a. Produto atualizado com sucesso!");
+        Alert.alert("Sucesso", "Produto atualizado!");
       } else {
-        await createProduct(productData);
-        Alert.alert('Sucesso', 'Produto cadastrado!');
+        console.log("3b. Criando novo produto...");
+        const result = await createProduct(productData);
+        console.log("4b. Produto criado! Resultado:", result);
+        Alert.alert("Sucesso", "Produto cadastrado!");
       }
+
+      console.log("5. Limpando formulário...");
       clearForm();
+
+      console.log("6. Recarregando lista...");
       await loadProducts();
+      console.log("7. Lista recarregada!");
     } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível salvar o produto.');
+      console.error("ERRO:", error);
+      Alert.alert("Erro", error?.message || error?.code || "Erro desconhecido");
+    }
+  }
+
+  async function loadProducts() {
+    console.log("loadProducts: buscando...");
+    try {
+      const list = await getProducts();
+      console.log("loadProducts: retornou", list.length, "produtos:", list);
+      setProducts(list);
+    } catch (error) {
+      console.error("loadProducts ERRO:", error);
+      Alert.alert("Erro", "Não foi possível carregar os produtos.");
     }
   }
 
   function handleEditProduct(product) {
-    setName(product.name || '');
+    setName(product.name || "");
     const formatted =
       product.priceFormatted || priceDigitsToFormatted(product.price);
     setPriceFormatted(formatted);
-    setPriceRaw(product.price || '');
-    setBarcode(product.barcode || '');
+    setPriceRaw(product.price || "");
+    setBarcode(product.barcode || "");
     setEditingProductId(product.id);
   }
 
   function handleOpenScanner() {
-    formSnapshot.current = { name, priceRaw, priceFormatted, editingProductId };
-    navigation.navigate('BarcodeScanner');
+    formSnapshot.current = {
+      name,
+      priceRaw,
+      priceFormatted,
+      editingProductId,
+    };
+    navigation.navigate("BarcodeScanner");
   }
 
   async function handleDeleteProduct(productId) {
-    const confirmDelete = window.confirm('Excluir este produto?');
-    if (!confirmDelete) return;
-    try {
-      await deleteProduct(productId);
-      if (editingProductId === productId) clearForm();
-      Alert.alert('Sucesso', 'Produto excluído!');
-      await loadProducts();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível excluir o produto.');
-    }
+    Alert.alert("Excluir", "Deseja excluir este produto?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteProduct(productId);
+            if (editingProductId === productId) clearForm();
+            await loadProducts();
+          } catch (error) {
+            console.error(error);
+            Alert.alert("Erro", "Não foi possível excluir o produto.");
+          }
+        },
+      },
+    ]);
   }
 
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
       {/* Header verde */}
       <View style={styles.header}>
@@ -157,7 +198,7 @@ export default function HomeScreen({ navigation, route }) {
         </View>
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => navigation.navigate("Login")}
         >
           <Text style={styles.logoutText}>Sair</Text>
         </TouchableOpacity>
@@ -172,11 +213,14 @@ export default function HomeScreen({ navigation, route }) {
         {/* Card preto — formulário */}
         <View style={styles.formCard}>
           <Text style={styles.formCardTitle}>
-            {editingProductId ? '✏️ Editar produto' : '＋ Novo produto'}
+            {editingProductId ? "✏️ Editar produto" : "＋ Novo produto"}
           </Text>
 
-          <TouchableOpacity style={styles.scannerBtn} onPress={handleOpenScanner}>
-            <Text style={styles.scannerBtnText}>📷  Ler código de barras</Text>
+          <TouchableOpacity
+            style={styles.scannerBtn}
+            onPress={handleOpenScanner}
+          >
+            <Text style={styles.scannerBtnText}>📷 Ler código de barras</Text>
           </TouchableOpacity>
 
           <TextInput
@@ -206,7 +250,7 @@ export default function HomeScreen({ navigation, route }) {
 
           <TouchableOpacity style={styles.btnGreen} onPress={handleSaveProduct}>
             <Text style={styles.btnGreenText}>
-              {editingProductId ? 'Atualizar →' : 'Cadastrar →'}
+              {editingProductId ? "Atualizar →" : "Cadastrar →"}
             </Text>
           </TouchableOpacity>
 
@@ -243,12 +287,10 @@ export default function HomeScreen({ navigation, route }) {
                   <Text style={styles.productPrice}>
                     {item.priceFormatted ||
                       priceDigitsToFormatted(item.price) ||
-                      '—'}
+                      "—"}
                   </Text>
                   {item.barcode ? (
-                    <Text style={styles.productBarcode}>
-                      🔖 {item.barcode}
-                    </Text>
+                    <Text style={styles.productBarcode}>🔖 {item.barcode}</Text>
                   ) : null}
                 </View>
                 <View style={styles.productActions}>
@@ -277,10 +319,10 @@ export default function HomeScreen({ navigation, route }) {
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const G     = '#BFDA45';
-const BLACK = '#1A1A1A';
-const WHITE = '#FFFFFF';
-const FIELD = '#F4F8E8';
+const G = "#BFDA45";
+const BLACK = "#1A1A1A";
+const WHITE = "#FFFFFF";
+const FIELD = "#F4F8E8";
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: G },
@@ -291,14 +333,14 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     paddingBottom: 24,
     paddingHorizontal: 24,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
   },
-  headerSub:  { fontSize: 13, color: BLACK, opacity: 0.6, fontWeight: '600' },
+  headerSub: { fontSize: 13, color: BLACK, opacity: 0.6, fontWeight: "600" },
   headerTitle: {
     fontSize: 28,
-    fontWeight: '900',
+    fontWeight: "900",
     color: BLACK,
     letterSpacing: -0.5,
   },
@@ -308,7 +350,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  logoutText: { color: WHITE, fontWeight: '700', fontSize: 13 },
+  logoutText: { color: WHITE, fontWeight: "700", fontSize: 13 },
 
   scrollContent: { paddingHorizontal: 20, paddingBottom: 20 },
 
@@ -318,16 +360,21 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 28,
   },
-  formCardTitle: { color: WHITE, fontSize: 15, fontWeight: '800', marginBottom: 16 },
+  formCardTitle: {
+    color: WHITE,
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 16,
+  },
 
   scannerBtn: {
     backgroundColor: G,
     borderRadius: 12,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 14,
   },
-  scannerBtnText: { color: BLACK, fontWeight: '700', fontSize: 14 },
+  scannerBtnText: { color: BLACK, fontWeight: "700", fontSize: 14 },
 
   input: {
     backgroundColor: FIELD,
@@ -337,74 +384,84 @@ const styles = StyleSheet.create({
     color: BLACK,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#DFF0A0',
+    borderColor: "#DFF0A0",
   },
 
   btnGreen: {
     backgroundColor: G,
     borderRadius: 50,
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 4,
     marginBottom: 10,
   },
-  btnGreenText: { color: BLACK, fontWeight: '800', fontSize: 15 },
+  btnGreenText: { color: BLACK, fontWeight: "800", fontSize: 15 },
 
   btnOutline: {
     borderRadius: 50,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 2,
     borderColor: G,
   },
-  btnOutlineText: { color: G, fontWeight: '700', fontSize: 14 },
+  btnOutlineText: { color: G, fontWeight: "700", fontSize: 14 },
 
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 14,
     gap: 10,
   },
-  listTitle:      { fontSize: 20, fontWeight: '900', color: BLACK },
+  listTitle: { fontSize: 20, fontWeight: "900", color: BLACK },
   countBadge: {
     backgroundColor: G,
     borderRadius: 20,
     minWidth: 30,
     height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 8,
   },
-  countBadgeText: { color: BLACK, fontWeight: '800', fontSize: 13 },
+  countBadgeText: { color: BLACK, fontWeight: "800", fontSize: 13 },
 
   emptyBox: {
     backgroundColor: FIELD,
     borderRadius: 20,
     padding: 32,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emptyEmoji: { fontSize: 40, marginBottom: 10 },
-  emptyText:  { color: '#888', fontSize: 14, fontWeight: '600' },
+  emptyText: { color: "#888", fontSize: 14, fontWeight: "600" },
 
   productCard: {
     backgroundColor: WHITE,
     borderRadius: 18,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    overflow: 'hidden',
+    flexDirection: "row",
+    alignItems: "center",
+    overflow: "hidden",
     borderWidth: 2,
-    borderColor: '#EEF0E8',
+    borderColor: "#EEF0E8",
   },
-  productAccent: { width: 6, alignSelf: 'stretch', backgroundColor: G },
-  productInfo:   { flex: 1, padding: 14 },
-  productName:   { fontSize: 15, fontWeight: '800', color: BLACK, marginBottom: 2 },
-  productPrice:  { fontSize: 14, fontWeight: '700', color: '#5a7a20', marginBottom: 2 },
-  productBarcode:{ fontSize: 11, color: '#999' },
+  productAccent: { width: 6, alignSelf: "stretch", backgroundColor: G },
+  productInfo: { flex: 1, padding: 14 },
+  productName: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: BLACK,
+    marginBottom: 2,
+  },
+  productPrice: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#5a7a20",
+    marginBottom: 2,
+  },
+  productBarcode: { fontSize: 11, color: "#999" },
 
   productActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingRight: 12,
     gap: 8,
   },
@@ -414,14 +471,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  editBtnText:  { color: BLACK, fontWeight: '700', fontSize: 13 },
+  editBtnText: { color: BLACK, fontWeight: "700", fontSize: 13 },
   deleteBtn: {
     backgroundColor: BLACK,
     borderRadius: 10,
     width: 34,
     height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  deleteBtnText: { color: WHITE, fontWeight: '800', fontSize: 14 },
+  deleteBtnText: { color: WHITE, fontWeight: "800", fontSize: 14 },
 });
