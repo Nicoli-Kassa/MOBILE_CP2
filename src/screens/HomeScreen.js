@@ -1,8 +1,3 @@
-// src/screens/HomeScreen.js
-// Tema: flat design, verde lima #BFDA45, preto, branco
-// 5 produtos simulados no estado inicial (MOCK_PRODUCTS)
-// Para voltar ao Firebase: remova o bloco MOCK e descomente loadProducts()
-
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,

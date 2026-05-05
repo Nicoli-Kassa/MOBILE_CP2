@@ -1,6 +1,3 @@
-// src/screens/BarcodeScannerScreen.js
-// Tema: flat design, verde lima #BFDA45, preto, branco
-
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
