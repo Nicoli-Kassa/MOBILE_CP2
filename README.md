@@ -12,8 +12,6 @@ Este projeto foi desenvolvido em aula com o objetivo de ensinar os conceitos fun
 - Navegação entre telas
 - Componentização básica
 
-<br>
-
 # 🎯 Objetivo
 
 Construir uma aplicação simples contendo:
@@ -26,16 +24,13 @@ Construir uma aplicação simples contendo:
 
 > ⚠️ Este projeto NÃO possui backend.
 > O foco é **layout + navegação**.
-
-<br>
+ 
 
 # 🧱 Tecnologias utilizadas
 
 - React Native
 - Expo (SDK 54)
 - React Navigation
-
-<br>
 
 # 🚀 Como executar o projeto
 
@@ -57,7 +52,6 @@ npm install
 npx expo start
 ```
 
-<br>
 
 # 📁 Estrutura do projeto
 
@@ -72,8 +66,7 @@ src/
     ForgotPasswordScreen.js
     HomeScreen.js
 ```
-
-<br>
+ 
 
 # 🧭 Fluxo de navegação
 
@@ -83,8 +76,7 @@ src/
 - Cadastro → Voltar
 - Esqueci senha → Voltar
 - Home → Login
-
-<br>
+ 
 
 # 🧠 Conceitos abordados
 
@@ -95,24 +87,22 @@ src/
 - Props e navegação (`navigation.navigate`)
 - Organização de projeto
 - Componentização básica
-
-<br>
-
+ 
 # 📸 Telas do app
 
 ### Login
 
-![Tela de login](img\telaLogin.png)
+![Tela de login](img/telaLogin.png)
 
 ### Cadastro
 
-![Tela de cadastro](img\telaCadastro.png)
+![Tela de cadastro](img/telaCadastro.png)
 
 ### Recuperação de senha
 
-![Tela de Recuperação de Senha](img\telaRecupSenha.png)
+![Tela de Recuperação de Senha](img/telaRecupSenha.png)
 
 ### Home
 
-![Tela de Home](img\telaHome1.png)
-![Tela de Home](img\telaHome2.png)
+![Tela de Home](img/telaHome1.png)
+![Tela de Home](img/telaHome2.png)
